@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小学生记忆配对游戏</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #6dd5ed, #2193b0);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #ff6b6b;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            margin-bottom: 10px;
+        }
+        
+        .game-info {
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .info-item {
+            text-align: center;
+        }
+        
+        .info-label {
+            font-size: 1rem;
+            color: #555;
+        }
+        
+        .info-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+        
+        .game-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            height: 120px;
+            width: 120px;
+            background-color: #ffd166;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+        }
+        
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .card-front {
+            background-color: #ffd166;
+            font-size: 3rem;
+            color: #ff6b6b;
+        }
+        
+        .card-back {
+            background-color: white;
+            transform: rotateY(180deg);
+        }
+        
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        button {
+            padding: 12px 25px;
+            font-size: 1.2rem;
+            background-color: #4ecdc4;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:hover {
+            background-color: #ff6b6b;
+            transform: translateY(-3px);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            display: none;
+            z-index: 100;
+        }
+        
+        .message h2 {
+            color: #ff6b6b;
+            margin-bottom: 20px;
+        }
+        
+        .message p {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .game-container {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+            
+            .card {
+                height: 100px;
+                width: 100px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🌟 记忆配对游戏 🌟</h1>
+        <p>翻开卡片，找到所有匹配的图案！</p>
+    </header>
+    
+    <div class="game-info">
+        <div class="info-item">
+            <div class="info-label">时间</div>
+            <div class="info-value" id="timer">0</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">移动次数</div>
+            <div class="info-value" id="moves">0</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">匹配数</div>
+            <div class="info-value" id="matches">0</div>
+        </div>
+    </div>
+    
+    <div class="game-container" id="game-board">
+        <!-- 卡片将通过JavaScript动态生成 -->
+    </div>
+    
+    <div class="controls">
+        <button id="start-btn">开始游戏</button>
+        <button id="reset-btn">重新开始</button>
+    </div>
+    
+    <div class="message" id="win-message">
+        <h2>恭喜你赢了！🎉</h2>
+        <p>你用了 <span id="final-moves"></span> 步移动</p>
+        <p>耗时 <span id="final-time"></span> 秒</p>
+        <button id="play-again">再玩一次</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 游戏元素
+            const gameBoard = document.getElementById('game-board');
+            const startBtn = document.getElementById('start-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const playAgainBtn = document.getElementById('play-again');
+            const timerElement = document.getElementById('timer');
+            const movesElement = document.getElementById('moves');
+            const matchesElement = document.getElementById('matches');
+            const winMessage = document.getElementById('win-message');
+            const finalMoves = document.getElementById('final-moves');
+            const finalTime = document.getElementById('final-time');
+            
+            // 游戏状态
+            let cards = [];
+            let hasFlippedCard = false;
+            let lockBoard = false;
+            let firstCard, secondCard;
+            let moves = 0;
+            let matches = 0;
+            let timer = 0;
+            let timerInterval;
+            
+            // 卡片图案 - 使用emoji，适合小学生
+            const cardSymbols = ['🐶', '🐱', '🐼', '🐯', '🐸', '🐰', '🐢', '🐦'];
+            
+            // 初始化游戏
+            function initGame() {
+                clearInterval(timerInterval);
+                timer = 0;
+                moves = 0;
+                matches = 0;
+                timerElement.textContent = timer;
+                movesElement.textContent = moves;
+                matchesElement.textContent = matches;
+                
+                // 清空游戏板
+                gameBoard.innerHTML = '';
+                
+                // 创建卡片数组（每张卡片两次）
+                cards = [];
+                cardSymbols.forEach(symbol => {
+                    cards.push(symbol);
+                    cards.push(symbol);
+                });
+                
+                // 洗牌
+                shuffleCards();
+                
+                // 生成卡片
+                cards.forEach((symbol, index) => {
+                    const card = document.createElement('div');
+                    card.classList.add('card');
+                    card.dataset.symbol = symbol;
+                    
+                    const cardFront = document.createElement('div');
+                    cardFront.classList.add('card-front');
+                    cardFront.innerHTML = '?';
+                    
+                    const cardBack = document.createElement('div');
+                    cardBack.classList.add('card-back');
+                    cardBack.innerHTML = symbol;
+                    
+                    card.appendChild(cardFront);
+                    card.appendChild(cardBack);
+                    
+                    card.addEventListener('click', flipCard);
+                    gameBoard.appendChild(card);
+                });
+            }
+            
+            // 洗牌函数
+            function shuffleCards() {
+                for (let i = cards.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [cards[i], cards[j]] = [cards[j], cards[i]];
+                }
+            }
+            
+            // 翻转卡片
+            function flipCard() {
+                if (lockBoard) return;
+                if (this === firstCard) return;
+                if (!timerInterval) startTimer();
+                
+                this.classList.add('flipped');
+                
+                if (!hasFlippedCard) {
+                    // 第一次点击
+                    hasFlippedCard = true;
+                    firstCard = this;
+                    return;
+                }
+                
+                // 第二次点击
+                secondCard = this;
+                moves++;
+                movesElement.textContent = moves;
+                
+                checkForMatch();
+            }
+            
+            // 检查匹配
+            function checkForMatch() {
+                let isMatch = firstCard.dataset.symbol === secondCard.dataset.symbol;
+                
+                if (isMatch) {
+                    disableCards();
+                    matches++;
+                    matchesElement.textContent = matches;
+                    
+                    if (matches === cardSymbols.length) {
+                        endGame();
+                    }
+                } else {
+                    unflipCards();
+                }
+            }
+            
+            // 禁用已匹配的卡片
+            function disableCards() {
+                firstCard.removeEventListener('click', flipCard);
+                secondCard.removeEventListener('click', flipCard);
+                
+                resetBoard();
+            }
+            
+            // 翻回不匹配的卡片
+            function unflipCards() {
+                lockBoard = true;
+                
+                setTimeout(() => {
+                    firstCard.classList.remove('flipped');
+                    secondCard.classList.remove('flipped');
+                    
+                    resetBoard();
+                }, 1000);
+            }
+            
+            // 重置棋盘状态
+            function resetBoard() {
+                [hasFlippedCard, lockBoard] = [false, false];
+                [firstCard, secondCard] = [null, null];
+            }
+            
+            // 开始计时器
+            function startTimer() {
+                timerInterval = setInterval(() => {
+                    timer++;
+                    timerElement.textContent = timer;
+                }, 1000);
+            }
+            
+            // 结束游戏
+            function endGame() {
+                clearInterval(timerInterval);
+                
+                setTimeout(() => {
+                    finalMoves.textContent = moves;
+                    finalTime.textContent = timer;
+                    winMessage.style.display = 'block';
+                }, 1000);
+            }
+            
+            // 事件监听器
+            startBtn.addEventListener('click', () => {
+                initGame();
+                startBtn.disabled = true;
+            });
+            
+            resetBtn.addEventListener('click', () => {
+                initGame();
+                startBtn.disabled = false;
+            });
+            
+            playAgainBtn.addEventListener('click', () => {
+                winMessage.style.display = 'none';
+                initGame();
+            });
+            
+            // 初始渲染
+            initGame();
+        });
+    </script>
+</body>
+</html>
